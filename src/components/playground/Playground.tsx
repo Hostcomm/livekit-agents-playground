@@ -1,8 +1,6 @@
 "use client";
 
-import { LoadingSVG } from "@/components/button/LoadingSVG";
 import { ChatMessageType, ChatTile } from "@/components/chat/ChatTile";
-import { ColorPicker } from "@/components/colorPicker/ColorPicker";
 import { AudioInputTile } from "@/components/config/AudioInputTile";
 import { ConfigurationPanelItem } from "@/components/config/ConfigurationPanelItem";
 import { NameValueRow } from "@/components/config/NameValueRow";
@@ -33,6 +31,11 @@ import {
 } from "livekit-client";
 import { QRCodeSVG } from "qrcode.react";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { PlaygroundFooter } from "./PlaygroundFooter";
+import { SettingValue } from "@/hooks/useSettings";
+import { CameraOffIcon, ChatText, VideoOffIcon } from "./icons";
+import DisconnectedPill from "./DisconnectedPill";
+import ConnectingPill from "./ConnectingPill";
 
 export interface PlaygroundMeta {
   name: string;
@@ -132,20 +135,54 @@ export default function Playground({
 
   useDataChannel(onDataReceived);
 
+  const isEnabled = (setting: SettingValue) => {
+    if (setting.type === "separator" || setting.type === "theme_color")
+      return false;
+    if (setting.type === "chat" || setting.type === "room") {
+      return config.settings[setting.type];
+    }
+
+    if (setting.type === "inputs") {
+      const key = setting.key as "camera" | "mic";
+      return config.settings.inputs[key];
+    } else if (setting.type === "outputs") {
+      const key = setting.key as "video" | "audio";
+      return config.settings.outputs[key];
+    }
+
+    return false;
+  };
+
+  const toggleSetting = (setting: SettingValue) => {
+    if (setting.type === "separator" || setting.type === "theme_color") return;
+    const newValue = !isEnabled(setting);
+    const newSettings = { ...config.settings };
+
+    if (setting.type === "chat") {
+      newSettings.chat = newValue;
+    } else if (setting.type === "inputs") {
+      newSettings.inputs[setting.key as "camera" | "mic"] = newValue;
+    } else if (setting.type === "outputs") {
+      newSettings.outputs[setting.key as "video" | "audio"] = newValue;
+    } else if (setting.type === "room") {
+      newSettings.room = newValue;
+    }
+    setUserSettings(newSettings);
+  };
+
   const videoTileContent = useMemo(() => {
     const videoFitClassName = `object-${config.video_fit || "cover"}`;
 
     const disconnectedContent = (
-      <div className="flex items-center justify-center text-gray-700 text-center w-full h-full">
-        No video track. Connect to get started.
-      </div>
+      <DisconnectedPill
+        icon={<VideoOffIcon />}
+        prefix="No Video"
+        title="to get started."
+      />
     );
 
     const loadingContent = (
-      <div className="flex flex-col items-center justify-center gap-2 text-gray-700 text-center h-full w-full">
-        <LoadingSVG />
-        Waiting for video track
-      </div>
+      <ConnectingPill icon={<VideoOffIcon />} title="Connecting to video..." />
     );
 
     const videoContent = (
@@ -164,25 +201,20 @@ export default function Playground({
       content = loadingContent;
     }
 
-    return (
-      <div className="flex flex-col w-full grow text-gray-950 bg-black rounded-sm border border-gray-800 relative">
-        {content}
-      </div>
-    );
+    return <div className="flex flex-col">{content}</div>;
   }, [agentVideoTrack, config, roomState]);
 
   const audioTileContent = useMemo(() => {
     const disconnectedContent = (
-      <div className="flex flex-col items-center justify-center gap-2 text-gray-300 text-center w-full">
-        No audio track. Connect to get started.
-      </div>
+      <DisconnectedPill
+        icon={<CameraOffIcon />}
+        prefix="No audio"
+        title="to get started."
+      />
     );
 
     const waitingContent = (
-      <div className="flex flex-col items-center gap-2 text-gray-700 text-center w-full">
-        <LoadingSVG />
-        Waiting for audio track
-      </div>
+      <ConnectingPill icon={<CameraOffIcon />} title="Connecting to audio..." />
     );
 
     // TODO: keep it in the speaking state until we come up with a better protocol for agent states
@@ -203,11 +235,11 @@ export default function Playground({
     );
 
     if (roomState === ConnectionState.Disconnected) {
-      return disconnectedContent;
+      return <div className="flex flex-col">{disconnectedContent}</div>;
     }
 
     if (!agentAudioTrack) {
-      return waitingContent;
+      return <div className="flex flex-col">{waitingContent}</div>;
     }
 
     return visualizerContent;
@@ -219,6 +251,25 @@ export default function Playground({
   ]);
 
   const chatTileContent = useMemo(() => {
+    const disconnectedContent = (
+      <DisconnectedPill
+        icon={<ChatText />}
+        showSeparator={false}
+        title="to start sending messages."
+      />
+    );
+    if (roomState === ConnectionState.Disconnected) {
+      return <div className="flex flex-col">{disconnectedContent}</div>;
+    }
+
+    const waitingContent = (
+      <ConnectingPill icon={<ChatText />} title="Connecting to messages..." />
+    );
+
+    if (!agentAudioTrack) {
+      return <div className="flex flex-col">{waitingContent}</div>;
+    }
+
     if (agentAudioTrack) {
       return (
         <TranscriptionTile
@@ -227,68 +278,35 @@ export default function Playground({
         />
       );
     }
+
     return <></>;
-  }, [config.settings.theme_color, agentAudioTrack]);
+  }, [config.settings.theme_color, agentAudioTrack, roomState]);
 
   const settingsTileContent = useMemo(() => {
     return (
       <div className="flex flex-col gap-4 h-full w-full items-start overflow-y-auto">
         {config.description && (
-          <ConfigurationPanelItem title="Description">
+          <ConfigurationPanelItem title="">
             {config.description}
           </ConfigurationPanelItem>
         )}
 
-        <ConfigurationPanelItem title="Settings">
+        <ConfigurationPanelItem title="">
           {localParticipant && (
             <div className="flex flex-col gap-2">
               <NameValueRow
                 name="Room"
                 value={name}
+                roomState={roomState}
                 valueColor={`${config.settings.theme_color}-500`}
               />
               <NameValueRow
                 name="Participant"
+                roomState={roomState}
                 value={localParticipant.identity}
               />
             </div>
           )}
-        </ConfigurationPanelItem>
-        <ConfigurationPanelItem title="Status">
-          <div className="flex flex-col gap-2">
-            <NameValueRow
-              name="Room connected"
-              value={
-                roomState === ConnectionState.Connecting ? (
-                  <LoadingSVG diameter={16} strokeWidth={2} />
-                ) : (
-                  roomState.toUpperCase()
-                )
-              }
-              valueColor={
-                roomState === ConnectionState.Connected
-                  ? `${config.settings.theme_color}-500`
-                  : "gray-500"
-              }
-            />
-            <NameValueRow
-              name="Agent connected"
-              value={
-                isAgentConnected ? (
-                  "TRUE"
-                ) : roomState === ConnectionState.Connected ? (
-                  <LoadingSVG diameter={12} strokeWidth={2} />
-                ) : (
-                  "FALSE"
-                )
-              }
-              valueColor={
-                isAgentConnected
-                  ? `${config.settings.theme_color}-500`
-                  : "gray-500"
-              }
-            />
-          </div>
         </ConfigurationPanelItem>
         {localVideoTrack && (
           <ConfigurationPanelItem
@@ -308,22 +326,12 @@ export default function Playground({
             title="Microphone"
             deviceSelectorKind="audioinput"
           >
-            <AudioInputTile frequencies={localMultibandVolume} />
-          </ConfigurationPanelItem>
-        )}
-        {/* <div className="w-full">
-          <ConfigurationPanelItem title="Color">
-            <ColorPicker
-              colors={themeColors}
-              selectedColor={config.settings.theme_color}
-              onSelect={(color) => {
-                const userSettings = { ...config.settings };
-                userSettings.theme_color = color;
-                setUserSettings(userSettings);
-              }}
+            <AudioInputTile
+              frequencies={localMultibandVolume}
+              accentColor={config.settings.theme_color}
             />
           </ConfigurationPanelItem>
-        </div> */}
+        )}
         {config.show_qr && (
           <div className="w-full">
             <ConfigurationPanelItem title="QR Code">
@@ -354,6 +362,7 @@ export default function Playground({
       title: "Video",
       content: (
         <PlaygroundTile
+          toggleSetting={toggleSetting}
           className="w-full h-full grow"
           childrenClassName="justify-center"
         >
@@ -368,6 +377,7 @@ export default function Playground({
       title: "Audio",
       content: (
         <PlaygroundTile
+          toggleSetting={toggleSetting}
           className="w-full h-full grow"
           childrenClassName="justify-center"
         >
@@ -379,8 +389,16 @@ export default function Playground({
 
   if (config.settings.chat) {
     mobileTabs.push({
-      title: "Chat",
-      content: chatTileContent,
+      title: "Messages",
+      content: (
+        <PlaygroundTile
+          toggleSetting={toggleSetting}
+          className="w-full h-full grow"
+          childrenClassName="justify-center"
+        >
+          {chatTileContent}
+        </PlaygroundTile>
+      ),
     });
   }
 
@@ -388,6 +406,8 @@ export default function Playground({
     title: "Settings",
     content: (
       <PlaygroundTile
+        // title={config.title}
+        toggleSetting={toggleSetting}
         padding={false}
         className="h-full w-full basis-1/4 items-start overflow-y-auto flex"
         childrenClassName="h-full grow items-start"
@@ -402,20 +422,16 @@ export default function Playground({
       <PlaygroundHeader
         title={config.title}
         logo={logo}
-        githubLink={config.github_link}
         height={headerHeight}
         accentColor={config.settings.theme_color}
-        connectionState={roomState}
-        onConnectClicked={() =>
-          onConnect(roomState === ConnectionState.Disconnected)
-        }
       />
       <div
-        className={`flex gap-4 py-4 grow w-full selection:bg-${config.settings.theme_color}-900`}
+        className={`flex gap-1 grow w-full selection:bg-${config.settings.theme_color}-900`}
         style={{ height: `calc(100% - ${headerHeight}px)` }}
       >
         <div className="flex flex-col grow basis-1/2 gap-4 h-full lg:hidden">
           <PlaygroundTabbedTile
+            toggleSetting={toggleSetting}
             className="h-full"
             tabs={mobileTabs}
             initialTab={mobileTabs.length - 1}
@@ -430,6 +446,7 @@ export default function Playground({
         >
           {config.settings.outputs.video && (
             <PlaygroundTile
+              toggleSetting={toggleSetting}
               title="Video"
               className="w-full h-full grow"
               childrenClassName="justify-center"
@@ -439,6 +456,7 @@ export default function Playground({
           )}
           {config.settings.outputs.audio && (
             <PlaygroundTile
+              toggleSetting={toggleSetting}
               title="Audio"
               className="w-full h-full grow"
               childrenClassName="justify-center"
@@ -450,20 +468,38 @@ export default function Playground({
 
         {config.settings.chat && (
           <PlaygroundTile
-            title="Chat"
+            toggleSetting={toggleSetting}
+            title="Messages"
             className="h-full grow basis-1/4 hidden lg:flex"
+            childrenClassName="justify-center"
+            backgroundColor="skin-fill-alternate"
           >
             {chatTileContent}
           </PlaygroundTile>
         )}
-        <PlaygroundTile
-          padding={false}
-          className="h-full w-full basis-1/4 items-start overflow-y-auto hidden max-w-[480px] lg:flex"
-          childrenClassName="h-full grow items-start"
-        >
-          {settingsTileContent}
-        </PlaygroundTile>
+        {config.settings.room && (
+          <PlaygroundTile
+            toggleSetting={toggleSetting}
+            title="Room Details"
+            padding={false}
+            className="h-full w-full basis-1/4 lg:flex overflow-y-auto hidden"
+            // childrenClassName="h-full grow items-start"
+            backgroundColor="skin-fill-alternate"
+          >
+            {settingsTileContent}
+          </PlaygroundTile>
+        )}
       </div>
+      <PlaygroundFooter
+        height={headerHeight}
+        accentColor={config.settings.theme_color}
+        connectionState={roomState}
+        onConnectClicked={() =>
+          onConnect(roomState === ConnectionState.Disconnected)
+        }
+        isEnabled={isEnabled}
+        toggleSetting={toggleSetting}
+      />
     </>
   );
 }

@@ -2,6 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* default is "dark mode" */
+  :root {
+    --color-fill-base: #000000;
+    --color-fill-accent: #001f29;
+    --color-fill-alternate: #252a2c;
+    --color-fill-inverted: #ffffff;
+    --color-fill-primary: #0099cc;
+    --color-button-fill: #000000;
+    --color-button-accent: #ffffff;
+    --color-button-accent-primary: #a3a0b0;
+    --color-button-accent-secondary: #a3a0b0;
+    --color-button-primary: #0099cc;
+    --color-button-active: #00171f;
+    --color-text-primary: #ffffff;
+    --color-text-secondary: #a3a0b0;
+    --color-text-tertiary: #fff;
+    --color-text-danger: #e62c13;
+    --color-text-connected: #1ca16c;
+    --color-text-connect: #09c;
+    --color-fill-connected: #2a5644;
+    --color-fill-disconnected: #613b36;
+    --color-fill-unselected: #f5f8ff1c;
+    --color-chat-accent: #384250;
+    --color-chat-alternate: #fff;
+    --color-border-secondary: #6c737f;
+    --color-setting-primary: #00171f;
+    --color-setting-secondary: #1c2021;
+  }
+  .light {
+    --color-fill-base: #f7f8f8;
+    --color-fill-accent: #fff;
+    --color-fill-alternate: #eff0f0;
+    --color-fill-inverted: #000000;
+    --color-fill-primary: #0099cc17;
+    --color-button-fill: #ebf7fb;
+    --color-button-accent: #0099cc;
+    --color-button-accent-primary: #bcc4c7;
+    --color-button-accent-secondary: #0099cc63;
+    --color-button-primary: #ebf7fb;
+    --color-button-active: #c8e9f4;
+    --color-text-primary: #5e6a70;
+    --color-text-secondary: #949ba4;
+    --color-text-tertiary: #006b8f;
+    --color-text-danger: #e62c13;
+    --color-text-connected: #1ca16c;
+    --color-text-connect: #09c;
+    --color-fill-connected: #c3e4d7;
+    --color-fill-disconnected: #f3d7d3;
+    --color-fill-unselected: #5e6a7017;
+    --color-chat-accent: #dfe1e2;
+    --color-chat-alternate: #5e6a7070;
+    --color-border-secondary: #cccfd1;
+    --color-setting-primary: #e2e4e4;
+    --color-setting-secondary: #fafafa;
+  }
+}
 body {
   background: black;
 }
@@ -21,18 +78,15 @@ body {
   animation: fadeIn 0.5s ease-in-out alternate-reverse infinite;
 }
 
-
 ::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 5px;
 }
 
-
 ::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.1);
   border-radius: 5px;
 }
-
 
 ::-webkit-scrollbar-thumb:hover {
   background: #555; /* Even lighter grey thumb on hover */
@@ -50,4 +104,34 @@ body {
   100% {
     opacity: 1;
   }
+}
+
+.button-active {
+  svg {
+    g {
+      rect {
+        fill: var(--color-button-active);
+      }
+    }
+  }
+}
+.header-button-active {
+  svg {
+    path:first-child {
+      fill: var(--color-button-active);
+    }
+  }
+}
+
+.avatar-me {
+  background: url("../styles/img/avatar_me.png") lightgray 50% / cover no-repeat;
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.avatar-agent {
+  background: url("../styles/img/avatar_agent.png") lightgray 50% / cover
+    no-repeat;
+  height: 2.5rem;
+  width: 2.5rem;
 }

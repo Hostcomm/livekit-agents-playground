@@ -43,9 +43,10 @@ export const ChatTile = ({ messages, accentColor, onSend }: ChatTileProps) => {
             return (
               <ChatMessage
                 key={index}
-                hideName={hideName}
+                hideName={false}
                 name={message.name}
                 message={message.message}
+                timestamp={message.timestamp}
                 isSelf={message.isSelf}
                 accentColor={accentColor}
               />
@@ -55,7 +56,7 @@ export const ChatTile = ({ messages, accentColor, onSend }: ChatTileProps) => {
       </div>
       <ChatMessageInput
         height={inputHeight}
-        placeholder="Type a message"
+        placeholder="Enter message"
         accentColor={accentColor}
         onSend={onSend}
       />

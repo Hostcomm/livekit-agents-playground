@@ -18,7 +18,11 @@ import {
   useConnection,
 } from "@/hooks/useConnection";
 import { useMemo } from "react";
+import localFont from "next/font/local";
 
+const myFont = localFont({
+  src: "../styles/fonts/Switzer-Regular.woff2",
+});
 const themeColors = [
   "cyan",
   "green",
@@ -88,7 +92,9 @@ export function HomeInner() {
         <meta property="og:image:height" content="630" /> */}
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="relative flex flex-col justify-center px-4 items-center h-full w-full bg-[#1c2536] repeating-square-background">
+      <main
+        className={`${myFont.className} relative flex flex-col justify-center items-center h-full w-full bg-skin-fill-base repeating-square-background`}
+      >
         <AnimatePresence>
           {toastMessage && (
             <motion.div

@@ -44,7 +44,7 @@ const customColors = {
     200: "#daeeff",
     300: "#bde1ff",
     400: "#90d0ff",
-    500: "#47abff",
+    500: "#0099CC",
     600: "#3594fc",
     700: "#1f75f1",
     800: "#175ede",
@@ -82,6 +82,7 @@ const safelist = [
   "transparent",
   "object-cover",
   "object-contain",
+  "textColor",
   ...shadowNames,
   ...textShadowNames,
   ...shades.flatMap((shade) => [
@@ -93,21 +94,47 @@ const safelist = [
 
 module.exports = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
+
   theme: {
-    colors: {
-      transparent: "transparent",
-      current: "currentColor",
-      black: colors.black,
-      white: colors.white,
-      gray: colors.neutral,
-      ...customColors,
-    },
     extend: {
-      dropShadow: {
-        ...textShadows,
+      backgroundColor: {
+        skin: {
+          "fill-primary": "var(--color-fill-primary)",
+          "fill-base": "var(--color-fill-base)",
+          "fill-accent": "var(--color-fill-accent)",
+          "button-primary": "var(--color-button-primary)",
+          "button-fill-base": "var(--color-button-fill)",
+          "fill-connected": "var(--color-fill-connected)",
+          "fill-disconnected": "var(--color-fill-disconnected)",
+          "fill-unselected": "var(--color-fill-unselected)",
+          "fill-alternate": "var(--color-fill-alternate)",
+          "fill-bubble": "var(--color-chat-accent)",
+          "fill-track-icon": "var(--color-setting-primary)",
+          "fill-track-detail": "var(--color-setting-secondary)"
+        },
       },
-      boxShadow: {
-        ...customShadows,
+      textColor: {
+        skin: {
+          primary: "var(--color-text-primary)",
+          secondary: "var(--color-text-secondary)",
+          tertiary: "var(--color-text-tertiary)",
+          danger: "var(--color-text-danger)",
+          accent: "var(--color-button-accent)",
+          "accent-primary": "var(--color-button-accent-primary)",
+          connected: "var(--color-text-connected)",
+          connect: "var(--color-text-connect)",
+          alternate: "var(--color-chat-alternate)",
+        },
+      },
+      borderColor: {
+        skin: {
+          "fill-primary": "var(--color-fill-primary)",
+          "fill-accent": "var(--color-chat-accent)",
+          "fill-secondary": "var(--color-border-secondary)",
+        },
+        ring: {
+          skin: {},
+        },
       },
     },
   },
