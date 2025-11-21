@@ -1,6 +1,8 @@
 "use client";
 
 import { ChatMessageType, ChatTile } from "@/components/chat/ChatTile";
+import { LoadingSVG } from "@/components/button/LoadingSVG";
+import { ColorPicker } from "@/components/colorPicker/ColorPicker";
 import { AudioInputTile } from "@/components/config/AudioInputTile";
 import { ConfigurationPanelItem } from "@/components/config/ConfigurationPanelItem";
 import { NameValueRow } from "@/components/config/NameValueRow";
@@ -10,25 +12,21 @@ import {
   PlaygroundTabbedTile,
   PlaygroundTile,
 } from "@/components/playground/PlaygroundTile";
-import { AgentMultibandAudioVisualizer } from "@/components/visualization/AgentMultibandAudioVisualizer";
 import { useConfig } from "@/hooks/useConfig";
-import { useMultibandTrackVolume } from "@/hooks/useTrackVolume";
 import { TranscriptionTile } from "@/transcriptions/TranscriptionTile";
 import {
+  BarVisualizer,
   VideoTrack,
   useConnectionState,
   useDataChannel,
   useLocalParticipant,
-  useRemoteParticipants,
   useRoomInfo,
   useTracks,
+  useVoiceAssistant,
+  useRoomContext,
+  useParticipantAttributes,
 } from "@livekit/components-react";
-import {
-  ConnectionState,
-  LocalParticipant,
-  RoomEvent,
-  Track,
-} from "livekit-client";
+import { ConnectionState, LocalParticipant, Track } from "livekit-client";
 import { QRCodeSVG } from "qrcode.react";
 import { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { PlaygroundFooter } from "./PlaygroundFooter";
@@ -36,6 +34,10 @@ import { SettingValue } from "@/hooks/useSettings";
 import { CameraOffIcon, ChatText, VideoOffIcon } from "./icons";
 import DisconnectedPill from "./DisconnectedPill";
 import ConnectingPill from "./ConnectingPill";
+import tailwindTheme from "../../lib/tailwindTheme.preval";
+import { EditableNameValueRow } from "@/components/config/NameValueRow";
+import { AttributesInspector } from "@/components/config/AttributesInspector";
+import { RpcPanel } from "./RpcPanel";
 
 export interface PlaygroundMeta {
   name: string;
@@ -57,18 +59,18 @@ export default function Playground({
 }: PlaygroundProps) {
   const { config, setUserSettings } = useConfig();
   const { name } = useRoomInfo();
-  const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [transcripts, setTranscripts] = useState<ChatMessageType[]>([]);
   const { localParticipant } = useLocalParticipant();
 
-  const participants = useRemoteParticipants({
-    updateOnlyOn: [RoomEvent.ParticipantMetadataChanged],
-  });
-  const agentParticipant = participants.find((p) => p.isAgent);
-  const isAgentConnected = agentParticipant !== undefined;
+  const voiceAssistant = useVoiceAssistant();
 
   const roomState = useConnectionState();
   const tracks = useTracks();
+  const room = useRoomContext();
+
+  const [rpcMethod, setRpcMethod] = useState("");
+  const [rpcPayload, setRpcPayload] = useState("");
+  const [showRpc, setShowRpc] = useState(false);
 
   useEffect(() => {
     if (roomState === ConnectionState.Connected) {
@@ -77,36 +79,23 @@ export default function Playground({
     }
   }, [config, localParticipant, roomState]);
 
-  const agentAudioTrack = tracks.find(
-    (trackRef) =>
-      trackRef.publication.kind === Track.Kind.Audio &&
-      trackRef.participant.isAgent
-  );
-
   const agentVideoTrack = tracks.find(
     (trackRef) =>
       trackRef.publication.kind === Track.Kind.Video &&
       trackRef.participant.isAgent
   );
 
-  const subscribedVolumes = useMultibandTrackVolume(
-    agentAudioTrack?.publication.track,
-    5
-  );
-
   const localTracks = tracks.filter(
     ({ participant }) => participant instanceof LocalParticipant
   );
-  const localVideoTrack = localTracks.find(
+  const localCameraTrack = localTracks.find(
     ({ source }) => source === Track.Source.Camera
+  );
+  const localScreenTrack = localTracks.find(
+    ({ source }) => source === Track.Source.ScreenShare
   );
   const localMicTrack = localTracks.find(
     ({ source }) => source === Track.Source.Microphone
-  );
-
-  const localMultibandVolume = useMultibandTrackVolume(
-    localMicTrack?.publication.track,
-    20
   );
 
   const onDataReceived = useCallback(
@@ -171,7 +160,7 @@ export default function Playground({
   };
 
   const videoTileContent = useMemo(() => {
-    const videoFitClassName = `object-${config.video_fit || "cover"}`;
+    const videoFitClassName = `object-${config.video_fit || "contain"}`;
 
     const disconnectedContent = (
       <DisconnectedPill
@@ -204,6 +193,18 @@ export default function Playground({
     return <div className="flex flex-col">{content}</div>;
   }, [agentVideoTrack, config, roomState]);
 
+  useEffect(() => {
+    document.body.style.setProperty(
+      "--lk-theme-color",
+      // @ts-ignore
+      tailwindTheme.colors[config.settings.theme_color]["500"]
+    );
+    document.body.style.setProperty(
+      "--lk-drop-shadow",
+      `var(--lk-theme-color) 0px 0px 18px`
+    );
+  }, [config.settings.theme_color]);
+
   const audioTileContent = useMemo(() => {
     const disconnectedContent = (
       <DisconnectedPill
@@ -217,19 +218,15 @@ export default function Playground({
       <ConnectingPill icon={<CameraOffIcon />} title="Connecting to audio..." />
     );
 
-    // TODO: keep it in the speaking state until we come up with a better protocol for agent states
     const visualizerContent = (
-      <div className="flex items-center justify-center w-full">
-        <AgentMultibandAudioVisualizer
-          state="speaking"
-          barWidth={30}
-          minBarHeight={30}
-          maxBarHeight={150}
-          accentColor={config.settings.theme_color}
-          accentShade={500}
-          frequencies={subscribedVolumes}
-          borderRadius={12}
-          gap={16}
+      <div
+        className={`flex items-center justify-center w-full h-48 [--lk-va-bar-width:30px] [--lk-va-bar-gap:20px] [--lk-fg:var(--lk-theme-color)]`}
+      >
+        <BarVisualizer
+          state={voiceAssistant.state}
+          trackRef={voiceAssistant.audioTrack}
+          barCount={5}
+          options={{ minHeight: 20 }}
         />
       </div>
     );
@@ -238,16 +235,16 @@ export default function Playground({
       return <div className="flex flex-col">{disconnectedContent}</div>;
     }
 
-    if (!agentAudioTrack) {
-      return <div className="flex flex-col">{waitingContent}</div>;
+    if (!voiceAssistant.audioTrack) {
+      return waitingContent;
     }
 
     return visualizerContent;
   }, [
-    agentAudioTrack,
+    voiceAssistant.audioTrack,
     config.settings.theme_color,
-    subscribedVolumes,
     roomState,
+    voiceAssistant.state,
   ]);
 
   const chatTileContent = useMemo(() => {
@@ -266,25 +263,48 @@ export default function Playground({
       <ConnectingPill icon={<ChatText />} title="Connecting to messages..." />
     );
 
-    if (!agentAudioTrack) {
+    if (!voiceAssistant.audioTrack) {
       return waitingContent;
     }
 
-    if (agentAudioTrack) {
+    if (voiceAssistant.audioTrack) {
       return (
         <TranscriptionTile
-          agentAudioTrack={agentAudioTrack}
+          agentAudioTrack={voiceAssistant.audioTrack}
           accentColor={config.settings.theme_color}
         />
       );
     }
 
     return <></>;
-  }, [config.settings.theme_color, agentAudioTrack, roomState]);
+  }, [
+    config.settings.theme_color,
+    voiceAssistant.audioTrack,
+
+    voiceAssistant.agent,
+    voiceAssistant.audioTrack,
+  ]);
+
+  const handleRpcCall = useCallback(async () => {
+    if (!voiceAssistant.agent || !room) {
+      throw new Error("No agent or room available");
+    }
+
+    const response = await room.localParticipant.performRpc({
+      destinationIdentity: voiceAssistant.agent.identity,
+      method: rpcMethod,
+      payload: rpcPayload,
+    });
+    return response;
+  }, [room, rpcMethod, rpcPayload, voiceAssistant.agent]);
+
+  const agentAttributes = useParticipantAttributes({
+    participant: voiceAssistant.agent,
+  });
 
   const settingsTileContent = useMemo(() => {
     return (
-      <div className="flex flex-col gap-4 h-full w-full items-start overflow-y-auto">
+      <div className="flex flex-col h-full w-full items-start overflow-y-auto">
         {config.description && (
           <ConfigurationPanelItem title="">
             {config.description}
@@ -308,15 +328,13 @@ export default function Playground({
             </div>
           )}
         </ConfigurationPanelItem>
-        {localVideoTrack && (
-          <ConfigurationPanelItem
-            title="Camera"
-            deviceSelectorKind="videoinput"
-          >
+
+        {localCameraTrack && (
+          <ConfigurationPanelItem title="Camera" source={Track.Source.Camera}>
             <div className="relative">
               <VideoTrack
                 className="rounded-sm border border-gray-800 opacity-70 w-full"
-                trackRef={localVideoTrack}
+                trackRef={localCameraTrack}
               />
             </div>
           </ConfigurationPanelItem>
@@ -324,14 +342,12 @@ export default function Playground({
         {localMicTrack && (
           <ConfigurationPanelItem
             title="Microphone"
-            deviceSelectorKind="audioinput"
+            source={Track.Source.Microphone}
           >
-            <AudioInputTile
-              frequencies={localMultibandVolume}
-              accentColor={config.settings.theme_color}
-            />
+            <AudioInputTile trackRef={localMicTrack} />
           </ConfigurationPanelItem>
         )}
+
         {config.show_qr && (
           <div className="w-full">
             <ConfigurationPanelItem title="QR Code">
@@ -348,12 +364,17 @@ export default function Playground({
     localParticipant,
     name,
     roomState,
-    isAgentConnected,
-    localVideoTrack,
+    localCameraTrack,
+    localScreenTrack,
     localMicTrack,
-    localMultibandVolume,
-    //themeColors,
-    //setUserSettings,
+    themeColors,
+    setUserSettings,
+    voiceAssistant.agent,
+    rpcMethod,
+    rpcPayload,
+    handleRpcCall,
+    showRpc,
+    setShowRpc,
   ]);
 
   let mobileTabs: PlaygroundTab[] = [];
@@ -444,7 +465,7 @@ export default function Playground({
           {config.settings.outputs.video && (
             <PlaygroundTile
               toggleSetting={toggleSetting}
-              title="Video"
+              title="Agent Video"
               className="w-full h-full grow"
               childrenClassName="justify-center"
             >
@@ -454,7 +475,7 @@ export default function Playground({
           {config.settings.outputs.audio && (
             <PlaygroundTile
               toggleSetting={toggleSetting}
-              title="Audio"
+              title="Agent Audio"
               className="w-full h-full grow"
               childrenClassName="justify-center"
             >

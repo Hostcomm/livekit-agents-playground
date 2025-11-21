@@ -19,6 +19,7 @@ import {
 } from "@/hooks/useConnection";
 import { useMemo } from "react";
 import localFont from "next/font/local";
+import { ToastProvider, useToast } from "@/components/toast/ToasterProvider";
 
 const myFont = localFont({
   src: "../styles/fonts/Switzer-Regular.woff2",
@@ -38,29 +39,28 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function Home() {
   return (
-    <ConfigProvider>
-      <ConnectionProvider>
-        <HomeInner />
-      </ConnectionProvider>
-    </ConfigProvider>
+    <ToastProvider>
+      <ConfigProvider>
+        <ConnectionProvider>
+          <HomeInner />
+        </ConnectionProvider>
+      </ConfigProvider>
+    </ToastProvider>
   );
 }
 
 export function HomeInner() {
-  const [toastMessage, setToastMessage] = useState<{
-    message: string;
-    type: ToastType;
-  } | null>(null);
   const { shouldConnect, wsUrl, token, mode, connect, disconnect } =
     useConnection();
 
   const { config } = useConfig();
+  const { toastMessage, setToastMessage } = useToast();
 
   const handleConnect = useCallback(
     async (c: boolean, mode: ConnectionMode) => {
       c ? connect(mode) : disconnect();
     },
-    [connect, disconnect]
+    [connect, disconnect],
   );
 
   const showPG = useMemo(() => {
@@ -103,13 +103,7 @@ export function HomeInner() {
               animate={{ opacity: 1, translateY: 0 }}
               exit={{ opacity: 0, translateY: -50 }}
             >
-              <PlaygroundToast
-                message={toastMessage.message}
-                type={toastMessage.type}
-                onDismiss={() => {
-                  setToastMessage(null);
-                }}
-              />
+              <PlaygroundToast />
             </motion.div>
           )}
         </AnimatePresence>
