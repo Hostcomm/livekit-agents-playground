@@ -82,27 +82,27 @@ export default function Playground({
   const agentVideoTrack = tracks.find(
     (trackRef) =>
       trackRef.publication.kind === Track.Kind.Video &&
-      trackRef.participant.isAgent,
+      trackRef.participant.isAgent
   );
 
   const localTracks = tracks.filter(
-    ({ participant }) => participant instanceof LocalParticipant,
+    ({ participant }) => participant instanceof LocalParticipant
   );
   const localCameraTrack = localTracks.find(
-    ({ source }) => source === Track.Source.Camera,
+    ({ source }) => source === Track.Source.Camera
   );
   const localScreenTrack = localTracks.find(
-    ({ source }) => source === Track.Source.ScreenShare,
+    ({ source }) => source === Track.Source.ScreenShare
   );
   const localMicTrack = localTracks.find(
-    ({ source }) => source === Track.Source.Microphone,
+    ({ source }) => source === Track.Source.Microphone
   );
 
   const onDataReceived = useCallback(
     (msg: any) => {
       if (msg.topic === "transcription") {
         const decoded = JSON.parse(
-          new TextDecoder("utf-8").decode(msg.payload),
+          new TextDecoder("utf-8").decode(msg.payload)
         );
         let timestamp = new Date().getTime();
         if ("timestamp" in decoded && decoded.timestamp > 0) {
@@ -119,7 +119,7 @@ export default function Playground({
         ]);
       }
     },
-    [transcripts],
+    [transcripts]
   );
 
   useDataChannel(onDataReceived);
@@ -197,11 +197,11 @@ export default function Playground({
     document.body.style.setProperty(
       "--lk-theme-color",
       // @ts-ignore
-      tailwindTheme.colors[config.settings.theme_color]["500"],
+      tailwindTheme.colors[config.settings.theme_color]["500"]
     );
     document.body.style.setProperty(
       "--lk-drop-shadow",
-      `var(--lk-theme-color) 0px 0px 18px`,
+      `var(--lk-theme-color) 0px 0px 18px`
     );
   }, [config.settings.theme_color]);
 
@@ -280,9 +280,9 @@ export default function Playground({
   }, [
     config.settings.theme_color,
     voiceAssistant.audioTrack,
-    
+
     voiceAssistant.agent,
-    voiceAssistant.audioTrack
+    voiceAssistant.audioTrack,
   ]);
 
   const handleRpcCall = useCallback(async () => {
@@ -386,7 +386,7 @@ export default function Playground({
               voiceAssistant.agent && (
                 <AttributesInspector
                   attributes={Object.entries(
-                    agentAttributes.attributes || {},
+                    agentAttributes.attributes || {}
                   ).map(([key, value], index) => ({
                     id: `agent-attr-${index}`,
                     key,
@@ -526,7 +526,7 @@ export default function Playground({
               }}
             />
           </ConfigurationPanelItem>
-        )}
+        </div>
         {config.show_qr && (
           <div className="w-full">
             <ConfigurationPanelItem title="QR Code">
@@ -643,6 +643,7 @@ export default function Playground({
         >
           {config.settings.outputs.video && (
             <PlaygroundTile
+              toggleSetting={toggleSetting}
               title="Agent Video"
               className="w-full h-full grow"
               childrenClassName="justify-center"
@@ -652,6 +653,7 @@ export default function Playground({
           )}
           {config.settings.outputs.audio && (
             <PlaygroundTile
+              toggleSetting={toggleSetting}
               title="Agent Audio"
               className="w-full h-full grow"
               childrenClassName="justify-center"
