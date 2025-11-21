@@ -61,6 +61,9 @@
 }
 body {
   background: black;
+  --lk-va-bar-gap: 4px;
+  --lk-va-bar-width: 4px;
+  --lk-va-border-radius: 2px;
 }
 
 #__next {

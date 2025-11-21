@@ -1,29 +1,22 @@
-import { useRef } from "react";
-import { AgentMultibandAudioVisualizer } from "../visualization/AgentMultibandAudioVisualizer";
-
-type AudioInputTileProps = {
-  frequencies: Float32Array[];
-  accentColor: string;
-};
+import {
+  BarVisualizer,
+  TrackReferenceOrPlaceholder,
+} from "@livekit/components-react";
 
 export const AudioInputTile = ({
-  frequencies,
-  accentColor,
-}: AudioInputTileProps) => {
+  trackRef,
+}: {
+  trackRef: TrackReferenceOrPlaceholder;
+}) => {
   return (
     <div
       className={`flex flex-row gap-2 h-[100px] items-center w-full justify-center bg-skin-fill-track-detail`}
     >
-      <AgentMultibandAudioVisualizer
-        state="speaking"
-        barWidth={4}
-        minBarHeight={2}
-        maxBarHeight={50}
-        accentColor={accentColor}
-        accentShade={400}
-        frequencies={frequencies}
-        borderRadius={12}
-        gap={4}
+      <BarVisualizer
+        trackRef={trackRef}
+        className="h-full w-full"
+        barCount={20}
+        options={{ minHeight: 0 }}
       />
     </div>
   );
