@@ -17,14 +17,15 @@ const createToken = (
   const at = new AccessToken(apiKey, apiSecret, userInfo);
   at.addGrant(grant);
   if (agentName) {
-    at.roomConfig = new RoomConfiguration({
+    // create RoomConfiguration from @livekit/protocol and cast to any to avoid type mismatch
+    at.roomConfig = (new RoomConfiguration({
       agents: [
         new RoomAgentDispatch({
           agentName: agentName,
           metadata: '{"user_id": "12345"}',
         }),
       ],
-    });
+    }) as unknown) as any;
   }
   return at.toJwt();
 };
