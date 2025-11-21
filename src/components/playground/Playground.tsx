@@ -311,191 +311,24 @@ export default function Playground({
           </ConfigurationPanelItem>
         )}
 
-        <ConfigurationPanelItem title="Room">
-          <div className="flex flex-col gap-2">
-            <EditableNameValueRow
-              name="Room name"
-              value={
-                roomState === ConnectionState.Connected
-                  ? name
-                  : config.settings.room_name
-              }
-              valueColor={`${config.settings.theme_color}-500`}
-              onValueChange={(value) => {
-                const newSettings = { ...config.settings };
-                newSettings.room_name = value;
-                setUserSettings(newSettings);
-              }}
-              placeholder="Auto"
-              editable={roomState !== ConnectionState.Connected}
-            />
-            <NameValueRow
-              name="Status"
-              value={
-                roomState === ConnectionState.Connecting ? (
-                  <LoadingSVG diameter={16} strokeWidth={2} />
-                ) : (
-                  roomState.charAt(0).toUpperCase() + roomState.slice(1)
-                )
-              }
-              valueColor={
-                roomState === ConnectionState.Connected
-                  ? `${config.settings.theme_color}-500`
-                  : "gray-500"
-              }
-            />
-          </div>
-        </ConfigurationPanelItem>
-
-        <ConfigurationPanelItem title="Agent">
-          <div className="flex flex-col gap-2">
-            <EditableNameValueRow
-              name="Agent name"
-              value={
-                roomState === ConnectionState.Connected
-                  ? config.settings.agent_name || "None"
-                  : config.settings.agent_name || ""
-              }
-              valueColor={`${config.settings.theme_color}-500`}
-              onValueChange={(value) => {
-                const newSettings = { ...config.settings };
-                newSettings.agent_name = value;
-                setUserSettings(newSettings);
-              }}
-              placeholder="None"
-              editable={roomState !== ConnectionState.Connected}
-            />
-            <NameValueRow
-              name="Identity"
-              value={
-                voiceAssistant.agent ? (
-                  voiceAssistant.agent.identity
-                ) : roomState === ConnectionState.Connected ? (
-                  <LoadingSVG diameter={12} strokeWidth={2} />
-                ) : (
-                  "No agent connected"
-                )
-              }
-              valueColor={
-                voiceAssistant.agent
-                  ? `${config.settings.theme_color}-500`
-                  : "gray-500"
-              }
-            />
-            {roomState === ConnectionState.Connected &&
-              voiceAssistant.agent && (
-                <AttributesInspector
-                  attributes={Object.entries(
-                    agentAttributes.attributes || {}
-                  ).map(([key, value], index) => ({
-                    id: `agent-attr-${index}`,
-                    key,
-                    value: String(value),
-                  }))}
-                  onAttributesChange={() => {}}
-                  themeColor={config.settings.theme_color}
-                  disabled={true}
-                />
-              )}
-            <p className="text-xs text-gray-500 text-right">
-              Set an agent name to use{" "}
-              <a
-                href="https://docs.livekit.io/agents/worker/dispatch#explicit"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-500 hover:text-gray-300 underline"
-              >
-                explicit dispatch
-              </a>
-              .
-            </p>
-          </div>
-        </ConfigurationPanelItem>
-
-        <ConfigurationPanelItem title="User">
-          <div className="flex flex-col gap-2">
-            <EditableNameValueRow
-              name="Name"
-              value={
-                roomState === ConnectionState.Connected
-                  ? localParticipant?.name || ""
-                  : config.settings.participant_name || ""
-              }
-              valueColor={`${config.settings.theme_color}-500`}
-              onValueChange={(value) => {
-                const newSettings = { ...config.settings };
-                newSettings.participant_name = value;
-                setUserSettings(newSettings);
-              }}
-              placeholder="Auto"
-              editable={roomState !== ConnectionState.Connected}
-            />
-            <EditableNameValueRow
-              name="Identity"
-              value={
-                roomState === ConnectionState.Connected
-                  ? localParticipant?.identity || ""
-                  : config.settings.participant_id || ""
-              }
-              valueColor={`${config.settings.theme_color}-500`}
-              onValueChange={(value) => {
-                const newSettings = { ...config.settings };
-                newSettings.participant_id = value;
-                setUserSettings(newSettings);
-              }}
-              placeholder="Auto"
-              editable={roomState !== ConnectionState.Connected}
-            />
-            <AttributesInspector
-              attributes={config.settings.attributes || []}
-              onAttributesChange={(newAttributes) => {
-                const newSettings = { ...config.settings };
-                newSettings.attributes = newAttributes;
-                setUserSettings(newSettings);
-              }}
-              metadata={config.settings.metadata}
-              onMetadataChange={(metadata) => {
-                const newSettings = { ...config.settings };
-                newSettings.metadata = metadata;
-                setUserSettings(newSettings);
-              }}
-              themeColor={config.settings.theme_color}
-              disabled={false}
-              connectionState={roomState}
-            />
-          </div>
-        </ConfigurationPanelItem>
-
-        {roomState === ConnectionState.Connected &&
-          config.settings.inputs.screen && (
-            <ConfigurationPanelItem
-              title="Screen"
-              source={Track.Source.ScreenShare}
-            >
-              {localScreenTrack ? (
-                <div className="relative">
-                  <VideoTrack
-                    className="rounded-sm border border-gray-800 opacity-70 w-full"
-                    trackRef={localScreenTrack}
-                  />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center text-gray-700 text-center w-full h-full">
-                  Press the button above to share your screen.
-                </div>
-              )}
-            </ConfigurationPanelItem>
+        <ConfigurationPanelItem title="">
+          {localParticipant && (
+            <div className="flex flex-col gap-2">
+              <NameValueRow
+                name="Room"
+                value={name}
+                roomState={roomState}
+                valueColor={`${config.settings.theme_color}-500`}
+              />
+              <NameValueRow
+                name="Participant"
+                roomState={roomState}
+                value={localParticipant.identity}
+              />
+            </div>
           )}
-        {roomState === ConnectionState.Connected && voiceAssistant.agent && (
-          <RpcPanel
-            config={config}
-            rpcMethod={rpcMethod}
-            rpcPayload={rpcPayload}
-            setRpcMethod={setRpcMethod}
-            setRpcPayload={setRpcPayload}
-            handleRpcCall={handleRpcCall}
-          />
-        )}
+        </ConfigurationPanelItem>
+
         {localCameraTrack && (
           <ConfigurationPanelItem title="Camera" source={Track.Source.Camera}>
             <div className="relative">
@@ -514,19 +347,7 @@ export default function Playground({
             <AudioInputTile trackRef={localMicTrack} />
           </ConfigurationPanelItem>
         )}
-        <div className="w-full">
-          <ConfigurationPanelItem title="Color">
-            <ColorPicker
-              colors={themeColors}
-              selectedColor={config.settings.theme_color}
-              onSelect={(color) => {
-                const userSettings = { ...config.settings };
-                userSettings.theme_color = color;
-                setUserSettings(userSettings);
-              }}
-            />
-          </ConfigurationPanelItem>
-        </div>
+
         {config.show_qr && (
           <div className="w-full">
             <ConfigurationPanelItem title="QR Code">

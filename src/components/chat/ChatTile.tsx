@@ -38,7 +38,7 @@ export const ChatTile = ({ messages, accentColor, onSend }: ChatTileProps) => {
               <ChatMessage
                 key={index}
                 hideName={false}
-                name={message.name}
+                name={message.isSelf ? "You" : message.name}
                 message={message.message}
                 timestamp={message.timestamp}
                 isSelf={message.isSelf}
