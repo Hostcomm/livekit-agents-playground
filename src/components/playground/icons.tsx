@@ -10,8 +10,8 @@ export const CheckIcon = () => (
       <path
         d="M1.5 7.5L4.64706 10L10.5 2"
         stroke="white"
-        stroke-width="1.5"
-        stroke-linecap="square"
+        strokeWidth="1.5"
+        strokeLinecap="square"
       />
     </g>
     <defs>

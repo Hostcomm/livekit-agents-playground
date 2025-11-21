@@ -30,6 +30,7 @@
     --color-border-secondary: #6c737f;
     --color-setting-primary: #00171f;
     --color-setting-secondary: #1c2021;
+    --lk-fg: #0099cc;
   }
   .light {
     --color-fill-base: #f7f8f8;
@@ -57,10 +58,14 @@
     --color-border-secondary: #cccfd1;
     --color-setting-primary: #e2e4e4;
     --color-setting-secondary: #fafafa;
+    --lk-fg: #0099cc;
   }
 }
 body {
   background: black;
+  --lk-va-bar-gap: 4px;
+  --lk-va-bar-width: 4px;
+  --lk-va-border-radius: 2px;
 }
 
 #__next {

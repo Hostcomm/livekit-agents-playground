@@ -54,8 +54,8 @@ export const PlaygroundTile: React.FC<PlaygroundTileProps> = ({
                   title.toLowerCase() === "chat"
                     ? "chat"
                     : title.toLowerCase() === "room details"
-                    ? "room"
-                    : "outputs",
+                      ? "room"
+                      : "outputs",
                 key: `${title.toLowerCase()}`,
               })
             }

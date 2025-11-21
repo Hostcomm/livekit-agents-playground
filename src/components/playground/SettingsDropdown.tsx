@@ -47,6 +47,11 @@ const settingsDropdown: SettingValue[] = [
     type: "inputs",
     key: "mic",
   },
+  {
+    title: "Allow screenshare",
+    type: "inputs",
+    key: "screen",
+  },
 ];
 
 export const SettingsDropdown = () => {
