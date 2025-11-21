@@ -43,7 +43,8 @@ const renderConnectedDisconnected = (roomState: ConnectionState) => {
       </div>
     );
   }
-  
+};
+
 type EditableNameValueRowProps = {
   name: string;
   value: string;
